@@ -1,9 +1,4 @@
-;;; increa-api.el --- LLM API integration for increa -*- lexical-binding: t; -*-
-
-;;; Commentary:
-;; API integration for Qwen-Coder and Claude
-
-;;; Code:
+;;; increa-api.el --- API communication layer -*- lexical-binding: t; -*-
 
 (require 'json)
 (require 'request)
@@ -44,9 +39,15 @@
   :type 'float
   :group 'increa)
 
+(defcustom increa-debug nil
+  "Enable debug logging for API requests."
+  :type 'boolean
+  :group 'increa)
+
 (defun increa--call-api (prompt callback &optional error-callback)
   "Call LLM API with PROMPT and invoke CALLBACK with result.
-ERROR-CALLBACK is called on error with error message."
+ERROR-CALLBACK is called on error with error message.
+Returns the request object for cancellation."
   (let ((request-data `((model . ,increa-model)
                         (max_tokens . ,increa-max-tokens)
                         (temperature . ,increa-temperature)
@@ -54,6 +55,12 @@ ERROR-CALLBACK is called on error with error message."
                                      (content . "You are a code completion assistant. Only output code, no explanations."))
                                     ((role . "user")
                                      (content . ,prompt))]))))
+    (when increa-debug
+      (message "=== Increa API Request ===")
+      (message "Model: %s" increa-model)
+      (message "Endpoint: %s" increa-api-endpoint)
+      (message "Temperature: %s, Max tokens: %s" increa-temperature increa-max-tokens)
+      (message "Prompt (first 200 chars): %s..." (substring prompt 0 (min 200 (length prompt)))))
     (request increa-api-endpoint
       :type "POST"
       :headers `(("Content-Type" . "application/json")
@@ -67,12 +74,19 @@ ERROR-CALLBACK is called on error with error message."
                   (let* ((choices (alist-get 'choices data))
                          (message (alist-get 'message (aref choices 0)))
                          (content (alist-get 'content message)))
+                    (when increa-debug
+                      (message "=== Increa API Response ===")
+                      (message "Completion: %s" (or content "(empty)"))
+                      (message "Usage: %s" (alist-get 'usage data)))
                     (when content
                       (funcall callback content)))))
       :error (cl-function
-              (lambda (&key error-thrown &allow-other-keys)
+              (lambda (&key error-thrown response &allow-other-keys)
+                (when increa-debug
+                  (message "=== Increa API Error ===")
+                  (message "Error: %s" error-thrown)
+                  (message "Response status: %s" (request-response-status-code response)))
                 (when error-callback
                   (funcall error-callback (format "Request error: %s" error-thrown))))))))
 
 (provide 'increa-api)
-;;; increa-api.el ends here

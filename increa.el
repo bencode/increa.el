@@ -1,21 +1,5 @@
 ;;; increa.el --- Intelligent completion with LLM -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2025
-
-;; Author: qijun
-;; URL: https://github.com/bencode/increa.el
-;; Package-Requires: ((emacs "27.1") (request "0.3.0"))
-;; Version: 0.1.0
-;; Keywords: convenience completion
-
-;; MIT License
-
-;;; Commentary:
-;; Intelligent code completion using LLM APIs (Qwen-Coder, Claude)
-;; Provides Copilot-like ghost text completion experience
-
-;;; Code:
-
 (require 'increa-api)
 (require 'increa-overlay)
 (require 'increa-context)
@@ -35,6 +19,14 @@
   :type 'boolean
   :group 'increa)
 
+(defcustom increa-enabled-modes
+  '(prog-mode text-mode)
+  "List of major modes where completion is enabled.
+Can be specific modes (e.g., python-mode, js-mode) or parent modes (e.g., prog-mode).
+Set to nil to enable in all modes."
+  :type '(repeat symbol)
+  :group 'increa)
+
 (defvar increa--post-command-timer nil
   "Timer for delayed completion trigger.")
 
@@ -44,38 +36,63 @@
 (defvar-local increa--completion-in-progress nil
   "Non-nil when API request is in progress.")
 
+(defvar-local increa--current-request nil
+  "Current API request object for cancellation.")
+
 (defun increa-complete ()
   "Trigger code completion at current point."
   (interactive)
   (when (and (not (increa--overlay-visible-p))
              (not increa--completion-in-progress)
              (not (minibufferp)))
+    (when increa--current-request
+      (request-abort increa--current-request)
+      (setq increa--current-request nil))
+
     (setq increa--last-trigger-point (point))
     (setq increa--completion-in-progress t)
 
     (let* ((context (increa--get-context))
-           (prompt (increa--build-prompt context)))
+           (prompt (increa--build-prompt context))
+           (trigger-point increa--last-trigger-point)
+           (trigger-buffer (current-buffer)))
       (message "Increa: requesting completion...")
 
-      (increa--call-api
-       prompt
-       (lambda (response)
-         (setq increa--completion-in-progress nil)
-         (when (and (eq (current-buffer) (window-buffer))
-                    (= (point) increa--last-trigger-point)
-                    increa-mode)
-           (let ((completion (increa--trim-completion response)))
-             (when (and completion
-                        (not (string-empty-p completion))
-                        (not (string-blank-p completion)))
-               (increa--set-overlay-text completion)))))
-       (lambda (err)
-         (setq increa--completion-in-progress nil)
-         (message "Increa error: %s" err))))))
+      (setq increa--current-request
+            (increa--call-api
+             prompt
+             (lambda (response)
+               (setq increa--completion-in-progress nil)
+               (setq increa--current-request nil)
+               (when (and (buffer-live-p trigger-buffer)
+                          (eq trigger-buffer (current-buffer))
+                          (= (point) trigger-point)
+                          increa-mode)
+                 (let ((completion (increa--trim-completion response)))
+                   (when (and completion
+                              (not (string-empty-p completion))
+                              (not (string-blank-p completion)))
+                     (increa--set-overlay-text completion)))))
+             (lambda (err)
+               (setq increa--completion-in-progress nil)
+               (setq increa--current-request nil)
+               (message "Increa error: %s" err)))))))
+
+(defun increa--mode-enabled-p ()
+  "Check if current major mode is enabled for completion."
+  (or (null increa-enabled-modes)
+      (apply #'derived-mode-p increa-enabled-modes)))
+
+(defun increa--after-whitespace-p ()
+  "Check if there's at least one whitespace character after point."
+  (or (eolp)
+      (looking-at-p "[[:space:]]")))
 
 (defun increa--should-trigger-p ()
   "Check if completion should be triggered."
   (and increa-enable-auto-complete
+       (increa--mode-enabled-p)
+       (increa--after-whitespace-p)
        (not (minibufferp))
        (not buffer-read-only)
        (not (increa--overlay-visible-p))
@@ -117,7 +134,6 @@
 (defvar increa-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "C-c i") #'increa-complete)
-    (define-key map (kbd "C-c C-i") #'increa-complete)
     (define-key map (kbd "C-<return>") #'increa-accept-completion)
     map)
   "Keymap for `increa-mode'.")
@@ -151,4 +167,3 @@
   :group 'increa)
 
 (provide 'increa)
-;;; increa.el ends here

@@ -1,9 +1,4 @@
-;;; increa-overlay.el --- Overlay display for increa -*- lexical-binding: t; -*-
-
-;;; Commentary:
-;; Ghost text completion display using overlays
-
-;;; Code:
+;;; increa-overlay.el --- Ghost text display -*- lexical-binding: t; -*-
 
 (defvar-local increa--overlay nil
   "Overlay for completion display.")
@@ -17,8 +12,6 @@
 
 (defconst increa-completion-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "TAB") #'increa-accept-completion)
-    (define-key map (kbd "<tab>") #'increa-accept-completion)
     map)
   "Keymap active when completion is visible.")
 
@@ -34,23 +27,32 @@
 
 (defun increa--set-overlay-text (text)
   "Display completion TEXT in overlay."
-  (let ((ov (increa--get-overlay))
-        (kov (overlay-get (increa--get-overlay) 'keymap-overlay)))
-    (move-overlay ov (point) (line-end-position))
-    (move-overlay kov (point) (min (point-max) (1+ (point))))
+  (when (and text
+             (not (string-empty-p text))
+             (not (minibufferp))
+             (buffer-live-p (current-buffer)))
+    (let ((ov (increa--get-overlay))
+          (kov (overlay-get (increa--get-overlay) 'keymap-overlay))
+          (pos (point))
+          (line-end (line-end-position)))
+      (when (and (overlayp ov)
+                 (overlayp kov)
+                 (number-or-marker-p pos)
+                 (number-or-marker-p line-end))
+        (move-overlay ov pos line-end)
+        (move-overlay kov pos (min (point-max) (1+ pos)))
 
-    (let* ((tail (buffer-substring (point) (line-end-position)))
-           (full-text (concat text tail))
-           (propertized (propertize text 'face 'increa-overlay-face)))
-      (if (eolp)
-          (progn
-            (put-text-property 0 (min 1 (length propertized)) 'cursor t propertized)
-            (overlay-put ov 'after-string propertized))
-        (overlay-put ov 'display (substring propertized 0 1))
-        (overlay-put ov 'after-string (substring propertized 1))))
+        (let* ((tail (buffer-substring pos line-end))
+               (propertized (propertize text 'face 'increa-overlay-face)))
+          (if (eolp)
+              (progn
+                (put-text-property 0 (min 1 (length propertized)) 'cursor t propertized)
+                (overlay-put ov 'after-string propertized))
+            (overlay-put ov 'display (substring propertized 0 1))
+            (overlay-put ov 'after-string (substring propertized 1))))
 
-    (overlay-put ov 'completion text)
-    (overlay-put ov 'start (point))))
+        (overlay-put ov 'completion text)
+        (overlay-put ov 'start pos)))))
 
 (defun increa-clear-overlay ()
   "Clear completion overlay."

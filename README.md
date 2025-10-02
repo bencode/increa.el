@@ -1,71 +1,99 @@
 # increa.el
 
-An intelligent code completion plugin for Emacs, providing a GitHub Copilot-like experience using Qwen-Coder or Claude API.
+Intelligent code completion for Emacs using LLM APIs. Provides GitHub Copilot-like ghost text completions.
 
-## Features
+Supports OpenAI-compatible APIs.
 
-- 🎯 **Ghost Text Completion**: Copilot-style overlay display
-- ⚡ **Async Requests**: Non-blocking experience
-- 🔌 **Multiple Backends**: Qwen-Coder / Claude API
-- 🎨 **Lightweight**: No LSP server required
-- ⌨️  **Smooth Interaction**: Tab to accept completion
+## Installation
 
-## Requirements
+### 1. Install request.el
 
-- Emacs 27.1 or later
-- [request.el](https://github.com/tkf/emacs-request) for HTTP requests
-
-## Quick Start
-
-### Installation
-
-Install `request.el` first:
 ```elisp
-;; Using package.el
-(package-install 'request)
+M-x package-install RET request RET
 
-;; Or in Doom Emacs, add to packages.el:
-;; (package! request)
+;; Or in Doom Emacs (packages.el):
+(package! request)
 ```
 
-Then install increa.el:
+### 2. Install increa.el
+
+```bash
+git clone https://github.com/bencode/increa.el.git ~/.emacs.d/increa.el
+```
+
+
 ```elisp
-(add-to-list 'load-path "/path/to/increa.el")
+(add-to-list 'load-path "~/.emacs.d/increa.el")
 (require 'increa)
 ```
 
-### Configuration
+## Configuration
+
+### Basic Setup
+
+Any OpenAI-compatible API should works. Example with Qwen-Coder:
+
+Get API key: https://help.aliyun.com/zh/model-studio/get-api-key
 
 ```elisp
-;; Qwen-Coder (recommended)
-(setq increa-api-provider 'qwen)
-(setq increa-api-key "YOUR_QWEN_API_KEY")
-(setq increa-model "qwen3-coder-flash")  ; or "qwen3-coder-plus"
-
-;; Or Claude
-;; (setq increa-api-provider 'claude)
-;; (setq increa-api-key "YOUR_CLAUDE_API_KEY")
-
-;; Enable
+(setq increa-api-endpoint "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions")
+(setq increa-api-key "YOUR_API_KEY")
+(setq increa-model "qwen3-coder-flash")
 (global-increa-mode 1)
 ```
 
-### Usage
+### Advanced Options
 
-- Type code, wait for gray completion hint
-- `TAB` to accept
-- `C-<return>` to accept (Ctrl+Enter)
+```elisp
+
+;; Control which modes to enable completion
+(setq increa-enabled-modes '(prog-mode text-mode))  ; default
+;; Or specific modes:
+;; (setq increa-enabled-modes '(python-mode js-mode emacs-lisp-mode))
+;; Or all modes:
+;; (setq increa-enabled-modes nil)
+
+;; Behavior
+(setq increa-idle-delay 0.5)            ; trigger delay
+(setq increa-context-max-chars 100000)  ; context size
+(setq increa-max-tokens 500)            ; completion length
+(setq increa-temperature 0.2)           ; randomness
+
+;; Enable for specific modes only (alternative to increa-enabled-modes)
+(add-hook 'python-mode-hook #'increa-mode)
+(add-hook 'js-mode-hook #'increa-mode)
+```
+
+## Usage
+
+- Type code, wait 0.5s for gray ghost text
+- `C-<return>` (Ctrl+Enter) to accept
 - `C-g` to dismiss
 - `C-c i` to trigger manually
 
-## Documentation
+### Providing Hints to AI
 
-- [Quick Start Guide](./QUICKSTART.md)
-- [Example Configuration](./example-config.el)
+Use `ai:` or `ai?` comments near the cursor to give hints:
 
-## Contributing
+```python
+def process_data(items):
+    # ai: filter out None values and sort by price
+```
 
-Contributions are welcome! Please feel free to submit issues and pull requests on [GitHub](https://github.com/bencode/increa.el).
+The AI will see these hints and generate code accordingly.
+
+## Troubleshooting
+
+**No completion:**
+- Check API key: `M-: increa-api-key`
+- Check mode: `M-x increa-mode` (should show enabled)
+- Check `*Messages*` buffer for errors
+
+**Too slow:**
+```elisp
+(setq increa-context-max-chars 50000)  ; reduce context
+(setq increa-model "qwen3-coder-flash") ; use faster model
+```
 
 ## License
 

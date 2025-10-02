@@ -1,9 +1,4 @@
-;;; increa-context.el --- Context extraction for increa -*- lexical-binding: t; -*-
-
-;;; Commentary:
-;; Extract code context and build prompts for LLM
-
-;;; Code:
+;;; increa-context.el --- Context extraction -*- lexical-binding: t; -*-
 
 (defcustom increa-context-max-chars 100000
   "Maximum characters to send to LLM, -1 means no limit."
@@ -79,6 +74,7 @@ Rules:
 - Keep it concise (1-3 lines preferred)
 - Match existing code style
 - No explanations, no markdown fences
+- Pay attention to comments near <cursor> that start with 'ai:' or 'ai?' - these provide hints about what to generate
 
 Completion:"
             language
@@ -99,4 +95,3 @@ Completion:"
     cleaned))
 
 (provide 'increa-context)
-;;; increa-context.el ends here

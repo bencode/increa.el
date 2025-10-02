@@ -60,7 +60,7 @@ CONTEXT is a plist from `increa--get-context'."
   (let ((prefix (plist-get context :prefix))
         (suffix (plist-get context :suffix))
         (language (plist-get context :language)))
-    (format "Complete the code at <cursor>. Output ONLY the completion code, no explanations, no markdown.
+    (format "Complete the code at <cursor>. Output ONLY the NEW code to insert, nothing else.
 
 Language: %s
 
@@ -68,13 +68,18 @@ Language: %s
 %s<cursor>%s
 ```
 
-Rules:
-- Only output the completion starting from <cursor>
-- Do NOT repeat prefix or suffix
-- Keep it concise (1-3 lines preferred)
-- Match existing code style
-- No explanations, no markdown fences
-- Pay attention to comments near <cursor> that start with 'ai:' or 'ai?' - these provide hints about what to generate
+CRITICAL Rules:
+- Output ONLY what should be inserted at <cursor>
+- DO NOT repeat any code from prefix (before <cursor>)
+- DO NOT repeat any code from suffix (after <cursor>)
+- DO NOT include <cursor> marker in output
+- Keep it concise (1-3 lines preferred, unless more is clearly needed)
+- Match existing code style and indentation
+- No explanations, no comments, no markdown fences in output
+- Pay attention to comments near <cursor> that start with 'ai:' or 'ai?' - these provide hints
+
+Example:
+If prefix is \"def foo(\" and suffix is \"):\", output ONLY the parameter like \"x, y\" NOT \"def foo(x, y):\"
 
 Completion:"
             language

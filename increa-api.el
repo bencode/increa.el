@@ -56,11 +56,7 @@ Returns the request object for cancellation."
                                     ((role . "user")
                                      (content . ,prompt))]))))
     (when increa-debug
-      (message "=== Increa API Request ===")
-      (message "Model: %s" increa-model)
-      (message "Endpoint: %s" increa-api-endpoint)
-      (message "Temperature: %s, Max tokens: %s" increa-temperature increa-max-tokens)
-      (message "Prompt (first 200 chars): %s..." (substring prompt 0 (min 200 (length prompt)))))
+      (message "[Increa] Request data: %s" (json-encode request-data)))
     (request increa-api-endpoint
       :type "POST"
       :headers `(("Content-Type" . "application/json")
@@ -75,17 +71,11 @@ Returns the request object for cancellation."
                          (message (alist-get 'message (aref choices 0)))
                          (content (alist-get 'content message)))
                     (when increa-debug
-                      (message "=== Increa API Response ===")
-                      (message "Completion: %s" (or content "(empty)"))
-                      (message "Usage: %s" (alist-get 'usage data)))
+                      (message "[Increa] Response data: %s" (json-encode data)))
                     (when content
                       (funcall callback content)))))
       :error (cl-function
-              (lambda (&key error-thrown response &allow-other-keys)
-                (when increa-debug
-                  (message "=== Increa API Error ===")
-                  (message "Error: %s" error-thrown)
-                  (message "Response status: %s" (request-response-status-code response)))
+              (lambda (&key error-thrown &allow-other-keys)
                 (when error-callback
                   (funcall error-callback (format "Request error: %s" error-thrown))))))))
 

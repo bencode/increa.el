@@ -6,21 +6,52 @@ Supports OpenAI-compatible APIs.
 
 ## Installation
 
-### 1. Install request.el
+### Doom Emacs
+
+Add to `packages.el`:
+
+```elisp
+(package! increa :recipe (:host github :repo "bencode/increa.el"))
+```
+
+Add to `config.el`:
+
+```elisp
+(use-package! increa
+  :config
+  (setq increa-api-endpoint "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
+        increa-api-key (getenv "QWEN_API_KEY")  ; or hardcode your key
+        increa-model "qwen3-coder-flash")
+  (global-increa-mode 1))
+```
+
+Then run `doom sync`.
+
+### Straight.el
+
+```elisp
+(straight-use-package
+ '(increa :type git :host github :repo "bencode/increa.el"))
+
+(require 'increa)
+(setq increa-api-key "YOUR_API_KEY"
+      increa-model "qwen3-coder-flash")
+(global-increa-mode 1)
+```
+
+### Manual Installation
+
+1. Install dependency:
 
 ```elisp
 M-x package-install RET request RET
-
-;; Or in Doom Emacs (packages.el):
-(package! request)
 ```
 
-### 2. Install increa.el
+2. Clone and load:
 
 ```bash
 git clone https://github.com/bencode/increa.el.git ~/.emacs.d/increa.el
 ```
-
 
 ```elisp
 (add-to-list 'load-path "~/.emacs.d/increa.el")
@@ -29,11 +60,9 @@ git clone https://github.com/bencode/increa.el.git ~/.emacs.d/increa.el
 
 ## Configuration
 
-### Basic Setup
+### Qwen-Coder
 
-Any OpenAI-compatible API should works. Example with Qwen-Coder:
-
-Get API key: https://help.aliyun.com/zh/model-studio/get-api-key
+Tested and recommended. Get API key: https://help.aliyun.com/zh/model-studio/get-api-key
 
 ```elisp
 (setq increa-api-endpoint "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions")
@@ -41,6 +70,39 @@ Get API key: https://help.aliyun.com/zh/model-studio/get-api-key
 (setq increa-model "qwen3-coder-flash")
 (global-increa-mode 1)
 ```
+
+**Available models via Alibaba endpoint:**
+- `qwen3-coder-flash` - Fast, recommended for code completion
+- `qwen3-coder-plus` - More powerful but slower
+- `glm-4.5-air` - Zhipu AI's GLM model
+
+### Moonshot (Kimi)
+
+Tested. Get API key: https://platform.moonshot.cn/console/api-keys
+
+```elisp
+(setq increa-api-endpoint "https://api.moonshot.cn/v1/chat/completions")
+(setq increa-api-key "YOUR_API_KEY")
+(setq increa-model "kimi-k2-0905-preview")
+(global-increa-mode 1)
+```
+
+### OpenAI
+
+Tested. Get API key: https://platform.openai.com/api-keys
+
+**Note:** May require HTTP proxy configuration in China.
+
+```elisp
+(setq increa-api-endpoint "https://api.openai.com/v1/chat/completions")
+(setq increa-api-key "YOUR_OPENAI_KEY")
+(setq increa-model "gpt-4o-mini")
+(global-increa-mode 1)
+```
+
+### Other OpenAI-compatible APIs
+
+Any OpenAI-compatible endpoint should work. Just set the three parameters: `increa-api-endpoint`, `increa-api-key`, `increa-model`.
 
 ### Advanced Options
 
@@ -81,19 +143,6 @@ def process_data(items):
 ```
 
 The AI will see these hints and generate code accordingly.
-
-## Troubleshooting
-
-**No completion:**
-- Check API key: `M-: increa-api-key`
-- Check mode: `M-x increa-mode` (should show enabled)
-- Check `*Messages*` buffer for errors
-
-**Too slow:**
-```elisp
-(setq increa-context-max-chars 50000)  ; reduce context
-(setq increa-model "qwen3-coder-flash") ; use faster model
-```
 
 ## License
 

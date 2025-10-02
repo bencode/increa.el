@@ -3,24 +3,29 @@
 (require 'json)
 (require 'request)
 
-(defcustom increa-api-provider 'qwen
-  "LLM API provider."
-  :type '(choice (const :tag "Qwen-Coder" qwen)
-                 (const :tag "Claude" claude))
-  :group 'increa)
-
 (defcustom increa-api-key ""
   "API key for the LLM provider."
   :type 'string
   :group 'increa)
 
 (defcustom increa-api-endpoint "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
-  "Qwen API endpoint."
+  "API endpoint URL (OpenAI-compatible format).
+Tested endpoints:
+- Alibaba (Qwen/GLM): https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions
+- Moonshot (Kimi): https://api.moonshot.cn/v1/chat/completions
+- OpenAI: https://api.openai.com/v1/chat/completions (may require proxy)"
   :type 'string
   :group 'increa)
 
 (defcustom increa-model "qwen3-coder-flash"
-  "Model name to use."
+  "Model name to use.
+Tested models:
+- qwen3-coder-flash (Alibaba, recommended)
+- qwen3-coder-plus (Alibaba)
+- glm-4.5-air (Alibaba)
+- kimi-k2-0905-preview (Moonshot)
+- gpt-4o-mini (OpenAI)
+- gpt-4o (OpenAI)"
   :type 'string
   :group 'increa)
 

@@ -1,5 +1,41 @@
 ;;; increa.el --- Intelligent completion with LLM -*- lexical-binding: t; -*-
 
+;; Copyright (C) 2025
+
+;; Author: bencode
+;; URL: https://github.com/bencode/increa.el
+;; Version: 0.1.0
+;; Package-Requires: ((emacs "27.1") (request "0.3.0"))
+;; Keywords: completion, ai, llm
+
+;;; Commentary:
+
+;; increa.el provides GitHub Copilot-like code completion using LLM APIs
+;; (Qwen-Coder or Claude). It displays ghost text completions asynchronously.
+;;
+;; Basic usage:
+;;
+;;   (require 'increa)
+;;   (setq increa-api-endpoint "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions")
+;;   (setq increa-api-key "your-api-key")
+;;   (setq increa-model "qwen3-coder-flash")
+;;   (global-increa-mode 1)
+;;
+;; For Doom Emacs, add to packages.el:
+;;
+;;   (package! increa :recipe (:host github :repo "bencode/increa.el"))
+;;
+;; Then in config.el:
+;;
+;;   (use-package! increa
+;;     :config
+;;     (setq increa-api-endpoint "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
+;;           increa-api-key (getenv "QWEN_API_KEY")
+;;           increa-model "qwen3-coder-flash")
+;;     (global-increa-mode 1))
+
+;;; Code:
+
 (require 'increa-api)
 (require 'increa-overlay)
 (require 'increa-context)
@@ -167,3 +203,4 @@ Set to nil to enable in all modes."
   :group 'increa)
 
 (provide 'increa)
+;;; increa.el ends here
